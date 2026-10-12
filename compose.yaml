@@ -32,7 +32,7 @@ services:
 
 
   agent:
-    image: memory-agent-langgraph-api:0.1.1-rc1
+    image: memory-agent-langgraph-api:0.1.1
 
     env_file:
       - .env
@@ -58,7 +58,7 @@ services:
 
 
   api:
-    image: memory-agent-api:0.1.1-rc2
+    image: memory-agent-api:0.1.1
 
     build:
       context: .
