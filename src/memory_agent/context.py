@@ -26,7 +26,16 @@ class Context:
     system_prompt: str = prompts.SYSTEM_PROMPT
 
     def __post_init__(self) -> None:
-        """Fetch env vars for attributes that were not passed as args."""
+        """
+        dataclass 初始化后自动执行。
+
+        遍历所有字段：
+        - 如果字段仍使用默认值，则尝试读取同名的大写环境变量；
+        - 如果环境变量存在，就用环境变量覆盖默认值；
+        - 如果字段在创建 Context 时被显式传入，则不会被环境变量覆盖。
+
+        优先级：显式传参 > 环境变量 > 默认值
+        """
         for f in fields(self):
             if not f.init:
                 continue

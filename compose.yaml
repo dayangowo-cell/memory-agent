@@ -1,0 +1,101 @@
+services:
+
+  db:
+    image: pgvector/pgvector:pg16@sha256:7b822b0aac60967beb1ea5e576b8602c94c300a157d187f385ae3e0da199b90a
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: memory_agent_db
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d memory_agent_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+
+  redis:
+    image: redis:6@sha256:a9c881672688090a1a9fee7277c69174398acd5369f0bdb8bb58726c43b98a2a
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+
+  agent:
+    image: memory-agent-langgraph-api:0.1.1-rc1
+
+    env_file:
+      - .env
+
+    environment:
+      POSTGRES_URI: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/memory_agent_db
+      REDIS_URI: redis://redis:6379
+
+    ports:
+      - "2025:8000"
+
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "python", "/api/healthcheck.py"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+
+  api:
+    image: memory-agent-api:0.1.1-rc2
+
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+
+    environment:
+      LANGGRAPH_URL: http://agent:8000
+
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: memory_agent_db
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+    ports:
+      - "8004:8000"
+
+    depends_on:
+      agent:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/agent/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+
+volumes:
+  pgdata:
+    external: true
+    name: memory-agent-pgdata

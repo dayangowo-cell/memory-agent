@@ -1,15 +1,12 @@
 {
-    "dockerfile_lines": [],
-    "graphs": {
-        "agent": "./src/memory_agent/graph.py:graph"
-    },
-    "env": ".env",
-    "python_version": "3.11",
-    "dependencies": ["."],
-    "store": {
-        "index": {
-            "dims": 1536,
-            "embed": "openai:text-embedding-3-small"
-        }
-    }
+  "dockerfile_lines": [],
+  "graphs": {
+    "agent": "./src/memory_agent/graph.py:graph"
+  },
+  "env": ".env",
+  "python_version": "3.11",
+  "dependencies": ["."],
+  "store": {
+  "path": "./src/memory_agent/store.py:generate_store"
+  }
 }

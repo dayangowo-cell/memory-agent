@@ -1,0 +1,30 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 升级 pip
+RUN python -m pip install --no-cache-dir --upgrade pip
+
+# 项目元数据
+COPY pyproject.toml README.md ./
+
+# LangGraph 配置
+COPY langgraph.json ./
+
+# 项目源码
+COPY src ./src
+
+# 安装 Memory-Agent
+RUN python -m pip install --no-cache-dir .
+
+# 安装当前已经验证过的 LangGraph CLI
+RUN python -m pip install --no-cache-dir "langgraph-cli[inmem]==0.4.31"
+
+# langgraph.json 中配置了 "env": ".env"
+# 真实 .env 已被 .dockerignore 排除，避免把密钥打进镜像
+# 这里仅创建一个空文件，真正环境变量之后由 Docker Compose 注入
+RUN touch .env
+
+EXPOSE 2024
+
+CMD ["langgraph", "dev", "--host", "0.0.0.0", "--port", "2024", "--no-browser"]

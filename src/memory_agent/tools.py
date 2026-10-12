@@ -1,39 +1,60 @@
-"""Define he agent's tools."""
+"""长期记忆持久化操作。"""
 
 import uuid
-from typing import Annotated
 
-from langchain_core.tools import InjectedToolArg
 from langgraph.store.base import BaseStore
 
 
 async def upsert_memory(
+    *,
+    subject: str,
+    relation: str,
+    value: str,
+    memory_type: str,
+    importance: str,
+    confidence: float,
     content: str,
     context: str,
-    *,
-    memory_id: uuid.UUID | None = None,
-    # Hide these arguments from the model.
-    user_id: Annotated[str, InjectedToolArg],
-    store: Annotated[BaseStore, InjectedToolArg],
+    memory_id: str | None = None,
+    user_id: str,
+    store: BaseStore,
 ) -> str:
-    """Upsert a memory in the database.
-
-    If a memory conflicts with an existing one, then just UPDATE the
-    existing one by passing in memory_id - don't create two memories
-    that are the same. If the user corrects a memory, UPDATE it.
-
-    Args:
-        content: The main content of the memory. For example:
-            "User expressed interest in learning about French."
-        context: Additional context for the memory. For example:
-            "This was mentioned while discussing career options in Europe."
-        memory_id: ONLY PROVIDE IF UPDATING AN EXISTING MEMORY.
-        The memory to overwrite.
     """
-    mem_id = memory_id or uuid.uuid4()
+    新增或更新一条结构化长期记忆。
+
+    memory_id is None:
+        ADD，新建 UUID。
+
+    memory_id 不为 None:
+        UPDATE，复用已有 key。
+    """
+
+    mem_id = (
+        memory_id
+        if memory_id is not None
+        else str(uuid.uuid4())
+    )
+
     await store.aput(
         ("memories", user_id),
-        key=str(mem_id),
-        value={"content": content, "context": context},
+        key=mem_id,
+        value={
+            # -------------------------------
+            # 机器可计算字段
+            # -------------------------------
+            "subject": subject,
+            "relation": relation,
+            "value": value,
+            "memory_type": memory_type,
+            "importance": importance,
+            "confidence": confidence,
+
+            # -------------------------------
+            # 给 Embedding / LLM 使用的文本
+            # -------------------------------
+            "content": content,
+            "context": context,
+        },
     )
+
     return f"Stored memory {mem_id}"

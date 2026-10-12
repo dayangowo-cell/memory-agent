@@ -1,4 +1,4 @@
-# This workflow will run integration tests for the current project once per day
+# This workflow will run integration tests-yuan for the current project once per day
 
 name: Integration Tests
 
@@ -36,7 +36,7 @@ jobs:
           uv venv
           uv pip install -r pyproject.toml --extra dev
           uv pip install -U pytest-asyncio vcrpy
-      - name: Run integration tests
+      - name: Run integration tests-yuan
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
